@@ -1,23 +1,24 @@
-menu = """
-[c] Cadastrar clientes
-[l] Listar Clientes
-[a] Criar conta
-[v] Visualizar contas
-[d] Depositar
-[s] Sacar
-[e] Extrato
-[q] Sair
+from textwrap import dedent
+import configs
 
-=> """
 
-saldo = 0
-limite = 500
-extrato = ""
-usuarios = []
-contas = []
-numero_saques = 0
-LIMITE_SAQUES = 3
-AGENCIA = '0001'
+def menu():
+    menus = dedent("""
+        [c] Cadastrar clientes
+        [l] Listar Clientes
+        [a] Criar conta
+        [v] Visualizar contas
+        [d] Depositar
+        [s] Sacar
+        [e] Extrato
+        [q] Sair
+
+        => """)
+    try:
+        return input(menus).strip().lower()
+    except KeyboardInterrupt:
+        print('Byeee!!! 👋👋👋')
+        return 'q'
 
 
 def deposito_conta(valor=0.0, saldo=0, extrato="", /):
@@ -86,7 +87,7 @@ def listar_clientes(usuarios=[]):
         print("--------------------------------")
 
 
-def criar_conta(contas, usuarios, /, *, cpf):
+def criar_conta(contas, usuarios, /, *, cpf, AGENCIA):
     usuario = None
     for u in usuarios:
         if u["cpf"] == cpf:
@@ -99,7 +100,7 @@ def criar_conta(contas, usuarios, /, *, cpf):
 
     numero_conta = len(contas) + 1
     conta = {
-        "agencia": "0001",
+        "agencia": AGENCIA,
         "numero_conta": numero_conta,
         "usuario": usuario
     }
@@ -121,40 +122,52 @@ def listar_contas(contas):
         print(f"CPF: {conta['usuario']['cpf']}")
 
 
-while True:
+def main():
+    saldo = configs.SALDO
+    limite = configs.LIMITE
+    extrato = configs.EXTRATO
+    usuarios = configs.USUARIOS
+    contas = configs.CONTAS
+    numero_saques = configs.NUMERO_SAQUES
+    LIMITE_SAQUES = configs.LIMITE_SAQUES
+    AGENCIA = configs.AGENCIA
 
-    opcao = input(menu)
+    while True:
+        opcao = menu()
 
-    if opcao == "d":
-        valor = float(input("Informe o valor do depósito: "))
-        saldo, extrato = deposito_conta(valor, saldo, extrato)
+        if opcao == "d":
+            valor = float(input("Informe o valor do depósito: "))
+            saldo, extrato = deposito_conta(valor, saldo, extrato)
+        elif opcao == "s":
+            valor = float(input("Informe o valor do saque: "))
+            saldo, extrato, numero_saques = saque_conta(saldo=saldo,
+                                                        valor=valor,
+                                                        extrato=extrato,
+                                                        limite=limite,
+                                                        numero_saques=numero_saques,
+                                                        LIMITE_SAQUES=LIMITE_SAQUES)
+        elif opcao == "e":
+            extrato_consulta(saldo, extrato=extrato)
+        elif opcao == "c":
+            nome = str(input("Informe o nome completo: "))
+            data_nascimento = str(input("Informe data nascimento: "))
+            cpf = str(input("Informe CPF: "))
+            endereco = str(input("Informe endereço: "))
+            usuarios = cadastro_usuario(usuarios, nome=nome, data_nascimento=data_nascimento, cpf=cpf,
+                                        endereco=endereco)
+        elif opcao == "l":
+            listar_clientes(usuarios)
+        elif opcao == 'a':
+            cpf = str(input("Informe o cpf: "))
+            contas = criar_conta(contas, usuarios, cpf=cpf, AGENCIA=AGENCIA)
+        elif opcao == 'v':
+            listar_contas(contas=contas)
+        elif opcao == "q":
+            print("Byeee!!! 👋👋👋")
+            break
 
-    elif opcao == "s":
-        valor = float(input("Informe o valor do saque: "))
+        else:
+            print("Operação inválida, por favor selecione novamente a operação desejada.")
 
-        saldo, extrato, numero_saques = saque_conta(saldo=saldo,
-                                                    valor=valor,
-                                                    extrato=extrato,
-                                                    limite=limite,
-                                                    numero_saques=numero_saques,
-                                                    LIMITE_SAQUES=LIMITE_SAQUES)
-    elif opcao == "e":
-        extrato_consulta(saldo, extrato=extrato)
-    elif opcao == "c":
-        nome = str(input("Informe o nome completo: "))
-        data_nascimento = str(input("Informe data nascimento: "))
-        cpf = str(input("Informe CPF: "))
-        endereco = str(input("Informe endereço: "))
-        usuarios = cadastro_usuario(usuarios, nome=nome, data_nascimento=data_nascimento, cpf=cpf, endereco=endereco)
-    elif opcao == "l":
-        listar_clientes(usuarios)
-    elif opcao == 'a':
-        cpf = str(input("Informe o cpf: "))
-        contas = criar_conta(contas, usuarios, cpf=cpf)
-    elif opcao == 'v':
-        listar_contas(contas=contas)
-    elif opcao == "q":
-        break
 
-    else:
-        print("Operação inválida, por favor selecione novamente a operação desejada.")
+main()
